@@ -12,12 +12,18 @@ class Algorithm():
         # Initialise data stores:
         # Historical data of all instruments
         self.data = {}
+
         # Initialise position limits
         self.positionLimits = {}
+
         # Initialise the current day as 0
         self.day = 0
+
         # Initialise the current positions
         self.positions = positions
+
+        # My configs
+        self.times_sold = 0
 
     # Helper function to fetch the current price of an instrument
     def get_current_price(self, instrument):
@@ -30,6 +36,7 @@ class Algorithm():
     def get_positions(self):
         # Get current position
         currentPositions = self.positions
+
         # Get position limits
         positionLimits = self.positionLimits
 
@@ -37,14 +44,18 @@ class Algorithm():
         desiredPositions = {}
         # Loop through all the instruments you can take positions on.
         for instrument, positionLimit in positionLimits.items():
-            # For each instrument initilise desired position to zero
+            # For each instrument initialise desired position to zero
             desiredPositions[instrument] = 0
 
         # IMPLEMENT CODE HERE TO DECIDE WHAT POSITIONS YOU WANT
         #######################################################################
-        # Buy thrifted jeans maximum amount
-        desiredPositions["Thrifted Jeans"] = -(positionLimits["Thrifted Jeans"] + 1)
 
+        if self.get_current_price("UQ Dollar") < 99:  # Buy
+            desiredPositions["UQ Dollar"] = positionLimits["UQ Dollar"] - currentPositions["UQ Dollar"]
+
+        if self.get_current_price("UQ Dollar") > 101:
+            self.times_sold += 1
+            desiredPositions["UQ Dollar"] = -(positionLimits["UQ Dollar"] - currentPositions["UQ Dollar"])
         #######################################################################
         # Return the desired positions
         return desiredPositions

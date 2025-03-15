@@ -32,6 +32,9 @@ totalDailyBudget = 500000
 # Trading Engine Class, Controlling Trades Tracking
 class TradingEngine:
     def __init__(self, dataFolder='./data/'):
+        dataFolder = "./data/unseen_data/"
+        dataFolder = "./data/historic_data/"
+
         # Init variables
         self.dataFolder = dataFolder
         # Store active positions
