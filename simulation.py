@@ -408,5 +408,5 @@ if __name__ == "__main__":
     print("Manual upper bound:", config.get("upper_bound"))
     print("Total PnL:", total_pnl)
 
-    # engine.plot_returns()
+    engine.plot_returns()
     engine.plot_instrument_details("UQ Dollar")
