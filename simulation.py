@@ -1,12 +1,16 @@
 # Library Imports
 import os
 import pandas as pd
+from matplotlib.pyplot import title
+
 from algorithm import Algorithm
 import numpy as np
 import matplotlib.pyplot as plt
 from decimal import Decimal, ROUND_HALF_UP
 from matplotlib.gridspec import GridSpec
 import math
+
+import mplcursors
 
 ##############################
 # Define constants
@@ -33,7 +37,7 @@ totalDailyBudget = 500000
 class TradingEngine:
     def __init__(self, dataFolder='./data/'):
         dataFolder = "./data/unseen_data/"
-        dataFolder = "./data/historic_data/"
+        # dataFolder = "./data/historic_data/"
 
         # Init variables
         self.dataFolder = dataFolder
@@ -81,7 +85,7 @@ class TradingEngine:
                 exit(1)
         # Otherwise, all data should have the same number of days.
         self.totalDays = numDays
-        print("Datasets loaded successfully.")
+        # print("Datasets loaded successfully.")
 
     # Set initial positions to 0 for each
     def initialize_positions(self):
@@ -124,7 +128,7 @@ class TradingEngine:
         return False
 
     # Process submitted algorithm
-    def run_algorithms(self, algorithmsInstance):
+    def run_algorithms(self, algorithmsInstance, output_daily_to_CLI = True):
         # Loop through each day of data (leaving the last)
         for day in range(self.totalDays):
             # Get current data history at this point in time
@@ -191,11 +195,103 @@ class TradingEngine:
             # Update total PNL
             self.totalPNL += dailyReturn
             # Display PNL
-            print(f"Total PNL @ Day {day}: {self.totalPNL}")
+            if output_daily_to_CLI:
+                print(f"Total PNL @ Day {day}: {self.totalPNL}")
             # Update total Value
             self.totalValueHistory.append(self.totalPNL)
             # Update simluator information
             self.positions = desiredPositions
+
+    def plot_instrument_details(self, instrument):
+        # Verify that the instrument's data is loaded.
+        if instrument not in self.data:
+            print(f"Instrument {instrument} data not found.")
+            return
+
+        # Retrieve price data and position history.
+        prices = self.data[instrument]['Price']
+        positions_pc = self.pcPositionHistorys[instrument]  # Position size in % of limit.
+
+        # Initialize lists to hold day indices for trade events.
+        long_days = []
+        short_days = []
+        close_days = []
+
+        # Determine trade events by comparing consecutive days:
+        # - Long entry: from 0 to positive.
+        # - Short entry: from 0 to negative.
+        # - Close: from non-zero to 0.
+        # Also treat sign changes as a close and new entry.
+        prev = 0
+        for day, pos in enumerate(positions_pc):
+            if day == 0:
+                prev = pos
+                continue
+            if prev == 0 and pos > 0:
+                long_days.append(day)
+            elif prev == 0 and pos < 0:
+                short_days.append(day)
+            elif prev != 0 and pos == 0:
+                close_days.append(day)
+            elif prev > 0 and pos < 0:
+                close_days.append(day)
+                short_days.append(day)
+            elif prev < 0 and pos > 0:
+                close_days.append(day)
+                long_days.append(day)
+            prev = pos
+
+        # Create a single figure and axis.
+        fig, ax = plt.subplots(figsize=(14, 7))
+
+        # Plot the price data.
+        ax.plot(prices, label=f'{instrument} Price', color='black')
+
+        # Add scatter plots for trade markers.
+        if long_days:
+            ax.scatter(long_days, prices.iloc[long_days], marker='^', color='green',
+                       s=100, label='Long Entry')
+        if short_days:
+            ax.scatter(short_days, prices.iloc[short_days], marker='v', color='red',
+                       s=100, label='Short Entry')
+        if close_days:
+            ax.scatter(close_days, prices.iloc[close_days], marker='o', facecolors='none',
+                       edgecolors='blue', s=100, label='Close Position')
+
+        ax.set_title(f"{instrument} Price and Trade Markers Over Time")
+        ax.set_xlabel("Day")
+        ax.set_ylabel("Price ($)")
+        ax.legend()
+        plt.tight_layout()
+
+        # Add the built-in cursor widget (crosshair) from matplotlib.widgets.
+        from matplotlib.widgets import Cursor
+        cursor = Cursor(ax, useblit=True, color='red', linewidth=1)
+
+        # Create an annotation that will display the current x and y.
+        annot = ax.annotate("", xy=(0, 0), xytext=(20, 20),
+                            textcoords="offset points",
+                            bbox=dict(boxstyle="round", fc="w"),
+                            arrowprops=dict(arrowstyle="->"))
+        annot.set_visible(False)
+
+        # Update the annotation on left mouse press.
+        def on_mouse_press(event):
+            if event.inaxes == ax and event.button == 1:
+                annot.xy = (event.xdata, event.ydata)
+                annot.set_text(f"Day: {event.xdata:.0f}\nValue: {event.ydata:.2f}")
+                annot.set_visible(True)
+                fig.canvas.draw_idle()
+
+        # Hide the annotation on mouse release.
+        def on_mouse_release(event):
+            annot.set_visible(False)
+            fig.canvas.draw_idle()
+
+        fig.canvas.mpl_connect("button_press_event", on_mouse_press)
+        fig.canvas.mpl_connect("button_release_event", on_mouse_release)
+
+        plt.show()
 
     def plot_returns(self):
         # Set figure size
@@ -223,8 +319,8 @@ class TradingEngine:
             line, = ax1.plot(returns, label=instrument)
             lines.append(line)
             # Plot the point at the final value
-            # ax1.scatter(len(returns) - 1, returns[-1], color='red', zorder=5)
-            # ax1.annotate(f'{returns[-1]:.2f}', (len(returns) - 1, returns[-1]), textcoords="offset points", xytext=(0, 10), ha='center', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'))
+            ax1.scatter(len(returns) - 1, returns[-1], color='red', zorder=5)
+            ax1.annotate(f'{returns[-1]:.2f}', (len(returns) - 1, returns[-1]), textcoords="offset points", xytext=(0, 10), ha='center', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'))
         legend1 = ax1.legend()
         ax1.set_title('Individual Instrument Cumulative P&L ($AUD)')
         # Plot historical instrument positions
@@ -277,6 +373,9 @@ class TradingEngine:
         plt.show()
         plt.close(fig)
 
+    def get_total_PnL(self) -> float:
+        return self.totalPNL
+
 
 # Function to round a float
 def quantize_decimal(value, decimal_places=2):
@@ -290,6 +389,24 @@ def quantize_decimal(value, decimal_places=2):
 
 if __name__ == "__main__":
     engine = TradingEngine()
-    algorithmInstance = Algorithm(engine.positions)
-    engine.run_algorithms(algorithmInstance)
-    engine.plot_returns()
+
+    # This is dumb for the lower and upper bound, shouldn't work so well lmao but ig it does
+    lower_bound = 99.999
+    upper_bound = 100.001
+    config = {
+        "lower_bound": 99.999,
+        "upper_bound": 100.001,
+    }
+
+    algorithmInstance = Algorithm(
+        positions=engine.positions,
+        config=config
+    )
+    engine.run_algorithms(algorithmInstance, output_daily_to_CLI=False)
+    total_pnl = engine.get_total_PnL()
+    print("Manual lower bound:", config.get("lower_bound"))
+    print("Manual upper bound:", config.get("upper_bound"))
+    print("Total PnL:", total_pnl)
+
+    # engine.plot_returns()
+    engine.plot_instrument_details("UQ Dollar")
