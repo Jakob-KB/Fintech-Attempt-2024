@@ -1,7 +1,10 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
-from indicators import compute_SMA  # Example: using compute_SMA; you can import others as needed.
+from indicators import compute_SMA
+from simulation import TradingEngine
+from tools import average_price_over_last_X_days
 
 
 # Base class for all plot features.
@@ -49,17 +52,29 @@ class ClickAnnotationFeature(PlotFeature):
 
         def on_mouse_press(event):
             if event.inaxes == ax and event.button == 1:
-                # Round xdata to nearest whole day.
-                day_clicked = int(round(event.xdata))
-                # Find the nearest day from the DataFrame.
-                nearest_day = df['Day'].iloc[(df['Day'] - day_clicked).abs().argmin()]
-                price_clicked = df.loc[df['Day'] == nearest_day, 'Price'].values[0]
-                annot.xy = (nearest_day, price_clicked)
-                annot.set_text(f"Day: {nearest_day}\nPrice: {price_clicked:.2f}")
+                # Retrieve the click coordinates in display space.
+                click_x, click_y = event.x, event.y
+
+                # Convert the DataFrame's data points to display coordinates.
+                data_points = np.column_stack((df['Day'], df['Price']))
+                disp_coords = ax.transData.transform(data_points)
+
+                # Compute Euclidean distance in display coordinates.
+                distances = np.linalg.norm(disp_coords - np.array([click_x, click_y]), axis=1)
+                idx_min = distances.argmin()
+
+                # Get the nearest point from the DataFrame.
+                nearest_day = df.iloc[idx_min]['Day']
+                nearest_price = df.iloc[idx_min]['Price']
+
+                # Update the annotation with the nearest point's values.
+                annot.xy = (nearest_day, nearest_price)
+                annot.set_text(f"Day: {nearest_day}\nPrice: {nearest_price:.2f}")
                 annot.set_visible(True)
                 fig.canvas.draw_idle()
 
         def on_mouse_release(event):
+            annot.set_visible(False)
             fig.canvas.draw_idle()
 
         fig.canvas.mpl_connect("button_press_event", on_mouse_press)
@@ -132,37 +147,28 @@ class InstrumentPlotter:
 
 
 def view_instrument(file_path):
-    # Read CSV file into a DataFrame; expecting columns "Day" and "Price"
+    # Read CSV file into a DataFrame; expecting columns "Day" and "Price".
     df = pd.read_csv(file_path)
     # Compute daily returns for further analysis.
     df['Return'] = df['Price'].pct_change()
+    # Create a 'Day' column if not already present (e.g., use the DataFrame's index).
+    if 'Day' not in df.columns:
+        df['Day'] = df.index
 
     plotter = InstrumentPlotter(df)
     # Add core plot features.
     plotter.add_feature(PriceLineFeature())
     plotter.add_feature(CrosshairCursorFeature())
     plotter.add_feature(ClickAnnotationFeature())
-
-    # Add a 14-day SMA indicator using our new API.
-    plotter.add_indicator(
-        indicator_func=compute_SMA,
-        indicator_params={'window': 14},
-        chart_params={'color': 'blue', 'linestyle': '--'},
-        label="14-Day SMA"
-    )
-    plotter.add_indicator(
-        indicator_func=compute_SMA,
-        indicator_params={'window': 28},
-        chart_params={'color': 'red', 'linestyle': '-.'},
-        label="28-Day SMA"
-    )
+    # Optionally, add an indicator
 
     # Display summary statistics.
     plotter.display_statistics()
     # Create and show the plot.
-    plotter.create_plot()
+    plotter.create_plot(title="Instrument Price and Trades Performance")
 
 
 if __name__ == '__main__':
     # Change the file path as needed.
-    view_instrument("./data/historic_data/Fintech Token_price_history.csv")
+    #view_instrument("./data/LLM_data/UQ Dollar_price_history.csv")
+    view_instrument("./synthetic_data.csv")

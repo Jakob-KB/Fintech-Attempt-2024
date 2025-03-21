@@ -37,7 +37,8 @@ totalDailyBudget = 500000
 class TradingEngine:
     def __init__(self, dataFolder='./data/'):
         dataFolder = "./data/unseen_data/"
-        # dataFolder = "./data/historic_data/"
+        dataFolder = "./data/historic_data/"
+        # dataFolder = "./data/LLM_data/"
 
         # Init variables
         self.dataFolder = dataFolder
@@ -391,8 +392,6 @@ if __name__ == "__main__":
     engine = TradingEngine()
 
     # This is dumb for the lower and upper bound, shouldn't work so well lmao but ig it does
-    lower_bound = 99.999
-    upper_bound = 100.001
     config = {
         "lower_bound": 99.999,
         "upper_bound": 100.001,

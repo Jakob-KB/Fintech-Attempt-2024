@@ -17,10 +17,7 @@ def optimize_bounds():
             # Create a config dictionary that includes both the bounds and indicator parameters.
             config = {
                 "lower_bound": lower,
-                "upper_bound": upper,
-                "sma_window": 20,            # window for simple moving average
-                "vol_window": 20,            # window for volatility (standard deviation)
-                "volatility_multiplier": 1.0 # multiplier to scale volatility for dynamic thresholds
+                "upper_bound": upper
             }
             algo = Algorithm(positions=engine.positions, config=config)
             engine.run_algorithms(algo, output_daily_to_CLI=False)
