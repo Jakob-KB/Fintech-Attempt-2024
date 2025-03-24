@@ -9,7 +9,6 @@ def sma_indicator(price_series: list[float], window: int) -> list[float]:
             sma.append(avg)
     return sma
 
-
 def average_price_over_last_X_days(stock_price_history, days) -> float:
     sum_of_prices = 0
     for price in stock_price_history[-days:]:
