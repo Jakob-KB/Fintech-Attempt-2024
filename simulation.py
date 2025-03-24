@@ -3,7 +3,8 @@ import os
 import pandas as pd
 from matplotlib.pyplot import title
 
-from algorithm import Algorithm
+#from algorithm import Algorithm
+from algorithm_revised import Algorithm
 import numpy as np
 import matplotlib.pyplot as plt
 from decimal import Decimal, ROUND_HALF_UP
@@ -143,7 +144,7 @@ class TradingEngine:
             algorithmsInstance.day = day
             algorithmsInstance.data = historicalData
             algorithmsInstance.positions = self.positions
-            algorithmsInstance.positionLimits = self.positionLimits
+            algorithmsInstance.position_limits = self.positionLimits
             # Now get the desired positions from the competitors algorithm
             desiredPositions = algorithmsInstance.get_positions()
 
@@ -398,8 +399,7 @@ if __name__ == "__main__":
     }
 
     algorithmInstance = Algorithm(
-        positions=engine.positions,
-        config=config
+        positions=engine.positions
     )
     engine.run_algorithms(algorithmInstance, output_daily_to_CLI=False)
     total_pnl = engine.get_total_PnL()
@@ -407,5 +407,8 @@ if __name__ == "__main__":
     print("Manual upper bound:", config.get("upper_bound"))
     print("Total PnL:", total_pnl)
 
+    print(algorithmInstance.trades)
+
     engine.plot_returns()
     engine.plot_instrument_details("UQ Dollar")
+    # engine.plot_instrument_details("Fintech Token")

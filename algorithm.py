@@ -1,21 +1,26 @@
-
-from tools import average_price_over_last_X_days
+from utils.tools import average_price_over_last_X_days
 
 class Algorithm():
     def __init__(self, positions, config: dict={}):
+
+        ######################## DEFAULT CONFIGS ##############################
+
         # Initialise data stores:
         self.data = {}              # Historical data of all instruments
         self.positionLimits = {}    # Initialise position limits
         self.day = 0                # Initialise the current day as 0
         self.positions = positions  # Initialise the current positions
 
-        # My configs
-
         ########################### MY CONFIGS ################################
 
         ##### UQ Dollar #####
         self.lower_bound = config.get("lower_bound", 100)
         self.upper_bound = config.get("upper_bound", 100)
+
+        ##### Fintech Token #####
+        self.short_term_SMA_days = config.get("short_term_SMA_days", 7)
+        self.long_term_SMA_days = config.get("long_term_SMA_days", 28)
+        self.difference_threshold = config.get("difference_threshold", 10)
 
         #######################################################################
 
@@ -24,7 +29,9 @@ class Algorithm():
         return self.data[instrument][-1]
 
     def get_positions(self):
-        currentPositions = self.positions  # Current positions we are holding
+
+        current_day = self.day  # Current trading day (starts at 0)
+        current_positions = self.positions  # Current positions we are holding
         position_limits = self.positionLimits  # Maximum long or short position we can hold
 
 
@@ -47,13 +54,16 @@ class Algorithm():
             desired_positions[stock] += amount
 
         def average_price(stock, days):
-            return average_price_over_last_X_days(stock, days)
+            return average_price_over_last_X_days(price_history(stock), days)
 
         def close_existing_position(stock):
             desired_positions[stock] = 0
 
         def current_position(stock):
-            return currentPositions[stock]
+            return current_positions[stock]
+
+        def position_limit(stock):
+            return position_limits[stock]
 
         # IMPLEMENT CODE HERE TO DECIDE WHAT POSITIONS YOU WANT
         #######################################################################
@@ -88,19 +98,15 @@ class Algorithm():
             difference = abs(short_term_moving_average - long_term_moving_average)
 
             # The difference in short and long term averages that we think is significant enough to act on
-            threshold = 50
+            difference_threshold = self.difference_threshold
 
-            if short_term_moving_average > long_term_moving_average and difference > threshold:
-                open_long_position("Fintech Token", amount=100)
+            if short_term_moving_average > long_term_moving_average and difference > difference_threshold:
+                open_long_position("Fintech Token", amount=35)
+            elif short_term_moving_average < long_term_moving_average and difference > difference_threshold:
+                open_short_position("Fintech Token", amount=-35)
 
-
-
-
-
-
-        trade_uq_dollar()
-
-
+        # trade_uq_dollar()
+        trade_fintech_token()
 
 
         #######################################################################
