@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from utils.tools import sma_indicator
 
-
 class ChartView:
     def __init__(self, price_data: list[float]):
         self.price_data = price_data
@@ -83,7 +82,6 @@ def get_trades(stock):
     from simulation import TradingEngine
 
     engine = TradingEngine()
-
 
 def main():
     df = pd.read_csv("data/historic_data/UQ Dollar_price_history.csv")
