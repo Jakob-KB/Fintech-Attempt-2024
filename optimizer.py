@@ -77,7 +77,7 @@ def optimize_instrument_params(
 # Example usage:
 if __name__ == '__main__':
     # Import your classes.
-    from algorithm_v3 import Algorithm
+    from algorithm import Algorithm
     from simulation import TradingEngine
 
     # For example, to optimize the "Fun Drink" instrument for parameters "sma_window" and "trade_size":

@@ -392,7 +392,7 @@ if __name__ == "__main__":
 
     # from algorithm import Algorithm
     # from algorithm_revised import Algorithm
-    from algorithm_v3 import Algorithm
+    from algorithm import Algorithm
 
     algorithmInstance = Algorithm(
         positions=engine.positions

@@ -1,6 +1,6 @@
 def optimize_fun_drink_params():
     from simulation import TradingEngine
-    from algorithm_v3 import Algorithm
+    from algorithm import Algorithm
     from scipy.optimize import differential_evolution
 
     def objective(params):
