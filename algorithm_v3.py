@@ -11,13 +11,10 @@ DEFAULT_CONFIG = {
         "sma_long_days": 28,
         "difference_threshold": 10,
     },
+    # New parameters for our SMA-based strategy for Fun Drink.
     "Fun Drink": {
-        "ema_days": 3,              # Use a short EMA window (3 days)
-        "bb_window": 3,             # Bollinger Bands window of 3 days
-        "bb_std": 1,                # Standard deviation multiplier remains 1
-        "rsi_days": 14,             # RSI period remains 14 days
-        "oversold_threshold": 30,   # RSI oversold threshold
-        "overbought_threshold": 70, # RSI overbought threshold
+        "ema_window": 3,       # number of days to compute the SMA
+        "trade_size": 10000,     # incremental trade unit
     },
 }
 
@@ -55,6 +52,7 @@ class Algorithm:
     def get_positions(self):
         current_positions = self.positions
         position_limits = self.position_limits
+
         # Initialise desired positions for all instruments.
         desired_positions = {instr: 0 for instr in position_limits}
 
@@ -62,59 +60,66 @@ class Algorithm:
         def trade_uq_dollar():
             current_price = self.get_current_price("UQ Dollar")
             params = self.config["UQ Dollar"]
-            if current_price < params["lower_bound"]:
+            if current_price < 100:
                 desired_positions["UQ Dollar"] = position_limits["UQ Dollar"]
-            elif current_price > params["upper_bound"]:
+            elif current_price > 100:
                 desired_positions["UQ Dollar"] = -position_limits["UQ Dollar"]
             else:
                 desired_positions["UQ Dollar"] = current_positions.get("UQ Dollar", 0)
 
         def trade_fintech_token():
             price_history = self.data["Fintech Token"]
-            current_price = self.get_current_price("Fintech Token")
             params = self.config["Fintech Token"]
             sma_short = sma_indicator(price_history, params["sma_short_days"])
             sma_long = sma_indicator(price_history, params["sma_long_days"])
             difference = abs(sma_short - sma_long)
 
-            if sma_short > sma_long and difference > params["difference_threshold"]:
-                desired_positions["Fintech Token"] = position_limits["Fintech Token"]
-            elif sma_short < sma_long and difference > params["difference_threshold"]:
-                desired_positions["Fintech Token"] = -position_limits["Fintech Token"]
-            else:
-                desired_positions["Fintech Token"] = current_positions.get("Fintech Token", 0)
+            if self.day > 2:
+                if sma_short > sma_long and difference > params["difference_threshold"]:
+                    desired_positions["Fintech Token"] = position_limits["Fintech Token"]
+                elif sma_short < sma_long and difference > params["difference_threshold"]:
+                    desired_positions["Fintech Token"] = -position_limits["Fintech Token"]
+                else:
+                    desired_positions["Fintech Token"] = position_limits["Fintech Token"]
 
         def trade_fun_drink():
-            # Get current price and price history.
             current_price = self.get_current_price("Fun Drink")
             price_history = self.data["Fun Drink"]
+            current_position = current_positions.get("Fun Drink", 0)
             params = self.config["Fun Drink"]
+            ema_window = params.get("ema_window")
+            trade_size = params.get("trade_size")
 
-            # Compute indicators using our new configuration parameters.
-            ema_val = ema_indicator(price_history, params["ema_days"])
-            bb_middle, bb_upper, bb_lower = bollinger_bands(price_history, params["bb_window"], params["bb_std"])
-            rsi_val = rsi_indicator(price_history, params["rsi_days"])
+            # By Default stay on the trade we currently have
+            desired_position = current_position
 
-            # Aggressive full-size trade logic:
-            # If the price is well below the Bollinger lower band, RSI is oversold,
-            # and the price is below the EMA, then go long at maximum allowed position.
-            if (current_price < bb_lower and
-                rsi_val < params["oversold_threshold"] and
-                current_price < ema_val):
-                desired_positions["Fun Drink"] = position_limits["Fun Drink"]
-            # If the price is well above the Bollinger upper band, RSI is overbought,
-            # and the price is above the EMA, then go short at maximum allowed position.
-            elif (current_price > bb_upper and
-                  rsi_val > params["overbought_threshold"] and
-                  current_price > ema_val):
-                desired_positions["Fun Drink"] = -position_limits["Fun Drink"]
+            # If there isn't enough history, hold current position.
+            if len(price_history) < ema_window:
+                desired_positions["Fun Drink"] = desired_position
+                return
+
+            # Calculate the EMA from the most recent ema_window days
+            ema = ema_indicator(price_history, ema_window)
+
+            # Buy when current price is below EMA, sell when above.
+            if current_price < ema:
+                # Buy signal: increase position, but do not exceed the long limit.
+                desired_position = trade_size
+            elif current_price > ema:
+                # Sell signal: decrease position, but do not exceed the short limit.
+                desired_position = -trade_size
             else:
-                # Otherwise, maintain the current position.
-                desired_positions["Fun Drink"] = current_positions.get("Fun Drink", 0)
+                desired_position = current_position
+
+            desired_positions["Fun Drink"] = desired_position
 
         # --- Execute Trading Functions ---
-        # trade_uq_dollar()
+        trade_fun_drink()
+        trade_uq_dollar()
         trade_fintech_token()
-        # trade_fun_drink()
+
+        # --- Close all trades on 2nd last day ---
+        if self.day == 364:
+            desired_positions = {instr: 0 for instr in position_limits}
 
         return desired_positions

@@ -3,8 +3,6 @@ import os
 import pandas as pd
 from matplotlib.pyplot import title
 
-#from algorithm import Algorithm
-from algorithm_revised import Algorithm
 import numpy as np
 import matplotlib.pyplot as plt
 from decimal import Decimal, ROUND_HALF_UP
@@ -38,7 +36,7 @@ totalDailyBudget = 500000
 class TradingEngine:
     def __init__(self, dataFolder='./data/'):
         dataFolder = "./data/unseen_data/"
-        dataFolder = "./data/historic_data/"
+        # dataFolder = "./data/seen_data/"
         # dataFolder = "./data/LLM_data/"
 
         # Init variables
@@ -392,23 +390,19 @@ def quantize_decimal(value, decimal_places=2):
 if __name__ == "__main__":
     engine = TradingEngine()
 
-    # This is dumb for the lower and upper bound, shouldn't work so well lmao but ig it does
-    config = {
-        "lower_bound": 99.999,
-        "upper_bound": 100.001,
-    }
+    # from algorithm import Algorithm
+    # from algorithm_revised import Algorithm
+    from algorithm_v3 import Algorithm
 
     algorithmInstance = Algorithm(
         positions=engine.positions
     )
+
     engine.run_algorithms(algorithmInstance, output_daily_to_CLI=False)
     total_pnl = engine.get_total_PnL()
-    print("Manual lower bound:", config.get("lower_bound"))
-    print("Manual upper bound:", config.get("upper_bound"))
     print("Total PnL:", total_pnl)
-
-    print(algorithmInstance.trades)
 
     engine.plot_returns()
     engine.plot_instrument_details("UQ Dollar")
     # engine.plot_instrument_details("Fintech Token")
+    engine.plot_instrument_details("Fun Drink")
