@@ -3,7 +3,6 @@ Only made these myself as we cant use external libraries like stock-indicators o
 """
 
 
-
 def sma_indicator(stock_price_history, days) -> float:
     sum_of_prices = 0
     if days == 0:
