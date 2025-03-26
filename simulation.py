@@ -1,15 +1,12 @@
 # Library Imports
 import os
 import pandas as pd
-from matplotlib.pyplot import title
 
-import numpy as np
+from algorithm import Algorithm
+
 import matplotlib.pyplot as plt
 from decimal import Decimal, ROUND_HALF_UP
 from matplotlib.gridspec import GridSpec
-import math
-
-import mplcursors
 
 ##############################
 # Define constants
@@ -35,10 +32,6 @@ totalDailyBudget = 500000
 # Trading Engine Class, Controlling Trades Tracking
 class TradingEngine:
     def __init__(self, dataFolder='./data/'):
-        dataFolder = "./data/unseen_data/"
-        # dataFolder = "./data/seen_data/"
-        # dataFolder = "./data/LLM_data/"
-
         # Init variables
         self.dataFolder = dataFolder
         # Store active positions
@@ -388,21 +381,25 @@ def quantize_decimal(value, decimal_places=2):
 
 
 if __name__ == "__main__":
-    engine = TradingEngine()
 
-    # from algorithm import Algorithm
-    # from algorithm_revised import Algorithm
-    from algorithm import Algorithm
+    # Uncomment one or the other to control if we use seen or unseen data
+    dataFolder = './data/seen_data/'
+    # dataFolder = './data/unseen_data/'
+
+
+    engine = TradingEngine(
+        dataFolder=dataFolder,
+    )
 
     algorithmInstance = Algorithm(
         positions=engine.positions
     )
 
     engine.run_algorithms(algorithmInstance, output_daily_to_CLI=False)
-    total_pnl = engine.get_total_PnL()
-    print("Total PnL:", total_pnl)
 
     engine.plot_returns()
+
+    # Comment out or and any other instruments if you want more detail on when/where the algo went long or short
     engine.plot_instrument_details("UQ Dollar")
     # engine.plot_instrument_details("Fintech Token")
     engine.plot_instrument_details("Fun Drink")

@@ -13,7 +13,9 @@ def optimize_bounds():
         pnl_sum = 0
         n_runs = 3
         for _ in range(n_runs):
-            engine = TradingEngine()
+            engine = TradingEngine(
+                dataFolder="../data/seen_data"
+            )
             # Create a config dictionary that includes both the bounds and indicator parameters.
             config = {
                 "lower_bound": lower,
@@ -33,7 +35,10 @@ def optimize_bounds():
         current_pnl = -objective(xk)
         print(f"Current best: lower = {lower:.4f}, upper = {upper:.4f}, PnL = {current_pnl:.2f}")
 
-    bounds = [(90, 110), (90, 110)]
+    bounds = [(
+        90, 110),
+        (90, 110)
+    ]
     result = differential_evolution(
         objective, bounds,
         popsize=20,          # Increased population size

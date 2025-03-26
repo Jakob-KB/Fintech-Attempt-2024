@@ -87,8 +87,8 @@ class Algorithm:
             price_history = self.data["Fun Drink"]
             current_position = current_positions.get("Fun Drink", 0)
             params = self.config["Fun Drink"]
-            ema_window = params.get("ema_window")
-            trade_size = params.get("trade_size")
+            ema_window = 3
+            trade_size = position_limits["Fun Drink"]
 
             # By Default stay on the trade we currently have
             desired_position = current_position

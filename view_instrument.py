@@ -14,25 +14,16 @@ class ChartView:
         self.data_styles = {}  # name -> dict(style)
         self.marker_styles = {}  # name -> dict(style)
 
-        self.rel_y_lower = 0
-        self.rel_y_upper = 100
-
-    def set_rel_y_range(self, lower: float, upper: float):
-        self.rel_y_lower = lower
-        self.rel_y_upper = upper
-
     def add_data_series(self, name: str, data: list[float], style_dict=None, plot: str = "main"):
-        """Add a line series to a specified subplot ('main' by default, or 'relative')."""
         self.data_series[name] = (data, plot)
         self.data_styles[name] = style_dict or {}
 
     def add_marker_series(self, name: str, data: list[float | None], style_dict=None, plot: str = "main"):
-        """Add a marker series to a specified subplot ('main' by default, or 'relative')."""
         self.marker_series[name] = (data, plot)
         self.marker_styles[name] = style_dict or {}
 
-    def create_plot(self, title="Instrument Price", cursor_color='red',
-                    cursor_linewidth=1, annotation_offset=(20, 20)):
+    def view(self, title="Instrument Price", cursor_color='red',
+             cursor_linewidth=1, annotation_offset=(20, 20)):
         # Separate series by the specified plot designation.
         main_series = {name: data for name, (data, plot) in self.data_series.items() if plot == "main"}
         relative_series = {name: data for name, (data, plot) in self.data_series.items() if plot == "relative"}
@@ -68,7 +59,6 @@ class ChartView:
         if ax_rel is not None:
             ax_rel.set_xlabel("Day")
             ax_rel.set_ylabel("Indicator")
-            # ax_rel.set_ylim(self.rel_y_lower, self.rel_y_upper)
             for name, values in relative_series.items():
                 ax_rel.plot(range(len(values)), values, label=name, **self.data_styles.get(name, {}))
             for name, values in relative_markers.items():
@@ -184,11 +174,10 @@ def macd_indicator(prices: list[float],
     return macd_line.tolist(), signal_line.tolist(), histogram.tolist()
 
 
-def bollinger_bands(prices: list[float], window: int, num_std: float = 2) -> tuple[
-    list[float], list[float], list[float]]:
-    """
-    Compute Bollinger Bands: middle band (SMA), upper band, and lower band.
-    """
+def bollinger_bands(prices: list[float],
+                    window: int,
+                    num_std: float = 2
+                    ) -> tuple[list[float], list[float], list[float]]:
     price_series = pd.Series(prices)
     sma = price_series.rolling(window).mean()
     std = price_series.rolling(window).std()
@@ -198,37 +187,46 @@ def bollinger_bands(prices: list[float], window: int, num_std: float = 2) -> tup
 
 
 def main():
-    # Example: read price history from CSV.
+    """
+    - Main plot is for looking at price history and indicators that are important relevant to the price.
+
+    - Relative plot is for looking at indicators that don't necessarily scale to the price like
+    RSI or other similar ratio based indicators.
+
+    """
+    # Read price history to a dataframe
     df = pd.read_csv("data/unseen_data/Fun Drink_price_history.csv")
+
+    # Convert the prices to a list
     prices = df["Price"].tolist()
 
+    # Calculate any indicators we may want to view/use
     sma = sma_indicator(prices, 28)
     ema = ema_indicator(prices, 7)
-
     macd_line, macd_signal, macd_hist = macd_indicator(prices)
-    # Bollinger Bands: middle (SMA), upper, lower for a window.
     bb_middle, bb_upper, bb_lower = bollinger_bands(prices, window=14, num_std=1)
 
+    # Create a chart with the price data
     chart = ChartView(prices)
-    # Main price data and absolute indicators
-    chart.add_data_series("Price", prices, {"color": "black"}, plot="main")
-    # chart.add_data_series("SMA (28 Days)", sma, {"color": "red"}, plot="main")
-    chart.add_data_series("EMA (3 Days)", ema, {"color": "red"}, plot="main")
-    chart.add_data_series("RSI (14 Days)", rsi_indicator(prices, 14), {"color": "blue"}, plot="relative")
 
-    # Bollinger Bands on main chart
+    # Add indicators to the main plot
+    chart.add_data_series("Price", prices, {"color": "black"}, plot="main")
+    chart.add_data_series("EMA (3 Days)", ema, {"color": "red"}, plot="main")
     # chart.add_data_series("Bollinger Upper (20 Days)", bb_upper, {"color": "red"}, plot="main")
     # chart.add_data_series("Bollinger Lower (20 Days)", bb_lower, {"color": "green"}, plot="main")
     # chart.add_data_series("Bollinger Middle (20 Days)", bb_middle, {"color": "blue"}, plot="main")
 
-    # For MACD, add all three lines on the relative plot.
-    chart.add_data_series("MACD Line", macd_line, {"color": "orange"}, plot="relative")
-    chart.add_data_series("MACD Signal", macd_signal, {"color": "magenta"}, plot="relative")
-    chart.add_data_series("MACD Histogram", macd_hist, {"color": "grey"}, plot="relative")
+    # Add indicators to the relative plot
+    chart.add_data_series("EMA (3 Days)", ema, {"color": "red"}, plot="main")
+    # chart.add_data_series("MACD Line", macd_line, {"color": "orange"}, plot="relative")
+    # chart.add_data_series("MACD Signal", macd_signal, {"color": "magenta"}, plot="relative")
+    # chart.add_data_series("MACD Histogram", macd_hist, {"color": "grey"}, plot="relative")
 
-    #chart.set_rel_y_range(-100, 100)
+    # !!!!!!!!!!!!! If you try to uncomment and see the MACD data you probably wont be able to as its
+    # in the range lik -0.5 to 0.5 in this case while the RSI is obviously in range 0 to 100 !!!!!!!!
 
-    chart.create_plot("Fun Drink Price History")
+    # Lastly create and view the chart
+    chart.view("Instrument Chart")
 
 
 if __name__ == '__main__':

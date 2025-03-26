@@ -1,3 +1,13 @@
+"""
+This is like a general use optimizer, meaning it's a fair bit more wordy than it needs to be since
+it's meant to be able to take an arbitrary number of parameters and optimize them.
+
+A better explanation of how the optimizer works can be seen in the optimize_UQ_Dollar.py file.
+"""
+
+
+
+
 def optimize_instrument_params(
         instrument,
         param_names,
@@ -29,7 +39,9 @@ def optimize_instrument_params(
         # Run the simulation several times to reduce noise
         pnl_sum = 0.0
         for _ in range(n_runs):
-            engine = simulation_engine_class()
+            engine = simulation_engine_class(
+                dataFolder="../data/seen_data"
+            )
             # Merge the optimized parameters into the instrument's config.
             config = {instrument: param_values}
             algo = algo_class(positions=engine.positions, config=config)
