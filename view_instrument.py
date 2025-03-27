@@ -55,7 +55,7 @@ class ChartView:
             ax_main.scatter(x_vals, y_vals, label=name, **self.marker_styles.get(name, {}))
         ax_main.legend()
 
-        # Plot relative series on the relative axis.
+        # Plot relative series on the relative axis
         if ax_rel is not None:
             ax_rel.set_xlabel("Day")
             ax_rel.set_ylabel("Indicator")
@@ -68,10 +68,10 @@ class ChartView:
             ax_rel.legend()
             ax_rel.grid(True)
 
-        # Crosshair for the main axis.
+        # Crosshair for the main axis
         Cursor(ax_main, useblit=True, color=cursor_color, linewidth=cursor_linewidth)
 
-        # Annotation on click for the main axis.
+        # Annotation on click for the main axis
         annot = ax_main.annotate("", xy=(0, 0), xytext=annotation_offset,
                                  textcoords="offset points",
                                  bbox=dict(boxstyle="round", fc="w"),
