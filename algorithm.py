@@ -70,6 +70,7 @@ class Algorithm:
         self.positions = positions  # Current positions.
 
         self.daily_spending = {}
+        self.trades = {}
 
         # Merge the default configuration with any provided overrides.
         self.config = DEFAULT_CONFIG.copy()
@@ -85,10 +86,13 @@ class Algorithm:
 
     def get_positions(self):
 
-        total_daily_budget = 500_000  # Basically the absolute value of the positions we are allowed to hold on any given day
+        total_budget = 500_000  # Basically the absolute value of the positions we are allowed to hold on any given day
+        total_spent = 0
 
         current_positions = self.positions
         position_limits = self.position_limits
+
+        current_days_trades = {}
 
         # Initialise desired positions for all instruments.
         desired_positions = {instr: 0 for instr in position_limits}
@@ -99,14 +103,17 @@ class Algorithm:
 
         # --- Trading Functions ---
         def trade_uq_dollar():
-            current_price = self.get_current_price("UQ Dollar")
-            params = self.config["UQ Dollar"]
+            asset = "UQ Dollar"
+            current_price = self.get_current_price(asset)
+
+
             if current_price < 100:
                 desired_positions["UQ Dollar"] = position_limits["UQ Dollar"]
             elif current_price > 100:
                 desired_positions["UQ Dollar"] = -position_limits["UQ Dollar"]
             else:
                 desired_positions["UQ Dollar"] = current_positions.get("UQ Dollar", 0)
+
 
         def trade_fintech_token():
             price_history = self.data["Fintech Token"]
@@ -152,6 +159,10 @@ class Algorithm:
             else:
                 desired_position = current_position
 
+
+            global total_spent
+            total_spent += desired_position * current_price
+
             desired_positions["Fun Drink"] = desired_position
 
         def trade_goober_eats():
@@ -182,6 +193,8 @@ class Algorithm:
             else:
                 desired_position = current_position
 
+            global total_spent
+            total_spent += desired_position * current_price
             desired_positions["Goober Eats"] = desired_position
 
         def trade_thifted_jeans():
@@ -226,6 +239,8 @@ class Algorithm:
                     desired_position = -trade_size
 
 
+            total_spent += desired_position * current_price
+
             desired_positions[asset] = desired_position
 
         def trade_red_pens_simple():
@@ -235,6 +250,8 @@ class Algorithm:
             price_history = self.data[asset]
             current_position = current_positions.get(asset, 0)
             trade_size = self.position_limits[asset]
+
+            # Caluclate the maximum we can spend without going over daily spending limit
 
             # By default, stay on the trade we currently have
             desired_position = current_position
@@ -251,6 +268,8 @@ class Algorithm:
                 desired_position = -trade_size
             else:
                 desired_position = current_position
+
+            total_avaliable = total_budget - total_spent
 
             desired_positions[asset] = desired_position
 
@@ -366,23 +385,20 @@ class Algorithm:
         trade_fintech_token_simple()
         trade_coffee_simple()
 
-        print(str("-" * 10), "Desired Positions", str("-" * 10))
-        for instr in self.instruments:
-            print(f"{instr}: {desired_positions[instr]}")
-
-        print(str("-" * 10), "Desired Positions in Cash (ABS)", str("-" * 10))
+        # print(str("-" * 10), "Desired Positions in Cash (ABS)", str("-" * 10))
         desired_sum_to_spend = 0
         current_day_spending = {}
         for instr in self.instruments:
             desired_instr_value = abs(desired_positions[instr] * self.get_current_price(instr))
             current_day_spending[instr] = desired_instr_value
             desired_sum_to_spend += desired_instr_value
-            print(f"{instr}: ${desired_instr_value}")
+            # print(f"{instr}: ${desired_instr_value}")
         self.daily_spending[self.day] = current_day_spending
-        print(f"Value of total daily positions: ${desired_sum_to_spend} / ${total_daily_budget} \n")
+        # print(f"Value of total daily positions: ${desired_sum_to_spend} / ${total_daily_budget} \n")
 
 
-        if desired_sum_to_spend < total_daily_budget - 85_500:
+        # Brute forcing this to always go thru so that i can test, dynamic trade sizing
+        if desired_sum_to_spend < total_budget - 85_500 or True:
             trade_red_pens_simple()
 
         if self.day == 364:
