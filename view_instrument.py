@@ -195,7 +195,7 @@ def main():
 
     """
     # Read price history to a dataframe
-    df = pd.read_csv("data/unseen_data/Fun Drink_price_history.csv")
+    df = pd.read_csv("data/seen_data/Fintech Token_price_history.csv")
 
     # Convert the prices to a list
     prices = df["Price"].tolist()
@@ -203,6 +203,7 @@ def main():
     # Calculate any indicators we may want to view/use
     sma = sma_indicator(prices, 28)
     ema = ema_indicator(prices, 7)
+    rsi = rsi_indicator(prices, 14)
     macd_line, macd_signal, macd_hist = macd_indicator(prices)
     bb_middle, bb_upper, bb_lower = bollinger_bands(prices, window=14, num_std=1)
 
@@ -217,10 +218,10 @@ def main():
     # chart.add_data_series("Bollinger Middle (20 Days)", bb_middle, {"color": "blue"}, plot="main")
 
     # Add indicators to the relative plot
-    chart.add_data_series("EMA (3 Days)", ema, {"color": "red"}, plot="main")
-    # chart.add_data_series("MACD Line", macd_line, {"color": "orange"}, plot="relative")
-    # chart.add_data_series("MACD Signal", macd_signal, {"color": "magenta"}, plot="relative")
-    # chart.add_data_series("MACD Histogram", macd_hist, {"color": "grey"}, plot="relative")
+    # chart.add_data_series("RSI", rsi, {"color": "blue"}, plot="relative")
+    chart.add_data_series("MACD Line", macd_line, {"color": "orange"}, plot="relative")
+    chart.add_data_series("MACD Signal", macd_signal, {"color": "magenta"}, plot="relative")
+    chart.add_data_series("MACD Histogram", macd_hist, {"color": "grey"}, plot="relative")
 
     # !!!!!!!!!!!!! If you try to uncomment and see the MACD data you probably wont be able to as its
     # in the range lik -0.5 to 0.5 in this case while the RSI is obviously in range 0 to 100 !!!!!!!!

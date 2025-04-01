@@ -1,6 +1,7 @@
 """
 Only made these myself as we cant use external libraries like stock-indicators or yfinance
 """
+import pandas as pd
 
 
 def sma_indicator(stock_price_history, days) -> float:
@@ -52,6 +53,37 @@ def rsi_indicator(stock_price_history, days) -> float:
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
+def rsi_series(prices: list[float], window: int) -> list[float]:
+    rsi_list = [None] * window
+    gains = []
+    losses = []
+    for i in range(1, window + 1):
+        change = prices[i] - prices[i - 1]
+        gains.append(max(change, 0))
+        losses.append(max(-change, 0))
+    avg_gain = sum(gains) / window
+    avg_loss = sum(losses) / window
+    if avg_loss == 0:
+        rsi = 100
+    else:
+        rs = avg_gain / avg_loss
+        rsi = 100 - (100 / (1 + rs))
+    rsi_list.append(rsi)
+    for i in range(window + 1, len(prices)):
+        change = prices[i] - prices[i - 1]
+        gain = max(change, 0)
+        loss = max(-change, 0)
+        avg_gain = (avg_gain * (window - 1) + gain) / window
+        avg_loss = (avg_loss * (window - 1) + loss) / window
+        if avg_loss == 0:
+            rsi = 100
+        else:
+            rs = avg_gain / avg_loss
+            rsi = 100 - (100 / (1 + rs))
+        rsi_list.append(rsi)
+    return rsi_list
+
+
 
 def bollinger_bands(stock_price_history, days, num_std=2) -> tuple[float, float, float]:
     # Calculate the simple moving average for the last 'days'
@@ -70,38 +102,18 @@ def bollinger_bands(stock_price_history, days, num_std=2) -> tuple[float, float,
     return middle_band, upper_band, lower_band
 
 
-def macd_indicator(stock_price_history, fast_days, slow_days, signal_days) -> tuple[float, float]:
-    # Ensure there's enough data to compute the slow EMA.
-    if len(stock_price_history) < slow_days:
-        return 0.0, 0.0
-
-    # Calculate smoothing factors.
-    fast_alpha = 2 / (fast_days + 1)
-    slow_alpha = 2 / (slow_days + 1)
-
-    # Initialize fast and slow EMAs using the simple moving average (SMA)
-    # Use the first 'fast_days' and 'slow_days' values respectively.
-    fast_ema = sma_indicator(stock_price_history[:fast_days], fast_days)
-    slow_ema = sma_indicator(stock_price_history[:slow_days], slow_days)
-
-    # We start the MACD series from the point where we have enough data for both EMAs.
-    macd_series = []
-
-    # Use the later of the two periods as the starting index.
-    start_index = max(fast_days, slow_days)
-    for price in stock_price_history[start_index:]:
-        # Update EMAs using the current price.
-        # Note: Using int(price) to follow your style, though typically you'd use the actual float value.
-        fast_ema = (int(price) - fast_ema) * fast_alpha + fast_ema
-        slow_ema = (int(price) - slow_ema) * slow_alpha + slow_ema
-        macd_series.append(fast_ema - slow_ema)
-
-    # Compute the signal line as the EMA of the MACD series.
-    # Re-use the ema_indicator function. Since ema_indicator expects a list of prices,
-    # we pass the macd_series and treat each MACD value similar to a price.
-    signal_line = ema_indicator(macd_series, signal_days)
-
-    # The latest MACD value is the last value in the macd_series.
-    latest_macd = macd_series[-1] if macd_series else 0.0
-
-    return latest_macd, signal_line
+def macd_indicator(prices: list[float],
+                   short_window: int = 12,
+                   long_window: int = 26,
+                   signal_window: int = 9) -> tuple[list[float], list[float], list[float]]:
+    """
+    Compute the MACD line, Signal line, and Histogram using exponential moving averages.
+    """
+    # Using pandas for simplicity
+    price_series = pd.Series(prices)
+    ema_short = price_series.ewm(span=short_window, adjust=False).mean()
+    ema_long = price_series.ewm(span=long_window, adjust=False).mean()
+    macd_line = ema_short - ema_long
+    signal_line = macd_line.ewm(span=signal_window, adjust=False).mean()
+    histogram = macd_line - signal_line
+    return macd_line.tolist(), signal_line.tolist(), histogram.tolist()

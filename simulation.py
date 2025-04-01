@@ -369,7 +369,6 @@ class TradingEngine:
     def get_total_PnL(self) -> float:
         return self.totalPNL
 
-
 # Function to round a float
 def quantize_decimal(value, decimal_places=2):
     decimal_value = Decimal(value)
@@ -383,8 +382,8 @@ def quantize_decimal(value, decimal_places=2):
 if __name__ == "__main__":
 
     # Uncomment one or the other to control if we use seen or unseen data
-    dataFolder = './data/seen_data/'
-    # dataFolder = './data/unseen_data/'
+    # dataFolder = './data/seen_data/'
+    dataFolder = './data/unseen_data/'
 
 
     engine = TradingEngine(
@@ -400,6 +399,10 @@ if __name__ == "__main__":
     engine.plot_returns()
 
     # Comment out or and any other instruments if you want more detail on when/where the algo went long or short
-    engine.plot_instrument_details("UQ Dollar")
+    # engine.plot_instrument_details("UQ Dollar")
     # engine.plot_instrument_details("Fintech Token")
-    engine.plot_instrument_details("Fun Drink")
+    # engine.plot_instrument_details("Fun Drink")
+    # engine.plot_instrument_details("Red Pens")
+    # engine.plot_instrument_details("Goober Eats")
+    # engine.plot_instrument_details("Coffee")
+    # engine.plot_instrument_details("Thrifted Jeans")
