@@ -116,7 +116,7 @@ class TradingEngine:
             return True
         # within daily budget, so record % usage
         pcBudgetUsage = round(totVal * 100 / totalDailyBudget, 2)
-        self.pcTotalBudget.append(pcBudgetUsage)
+        self.pcTotalBudget.append(totVal)
         # return false, as within the daily budget
         return False
 
@@ -338,8 +338,8 @@ class TradingEngine:
         ax2.set_title(r'Daily Individual P&L ($AUD)')
         # Plot daily budget usage graph
         line, = ax5.plot(self.pcTotalBudget, label='Budget Utilisation', color='black')
-        ax5.set_title('Percentage of Total Daily Limit Utilised (%)')
-        ax5.set_ylim(0, 100)
+        ax5.set_title("Daily Budget Usage ($AUD)")
+        ax5.set_ylim(0, 500_000)
 
         # Handle picking legend options
         def on_pick(event):
@@ -399,7 +399,7 @@ if __name__ == "__main__":
     engine.plot_returns()
 
     # Comment out or and any other instruments if you want more detail on when/where the algo went long or short
-    # engine.plot_instrument_details("UQ Dollar")
+    engine.plot_instrument_details("UQ Dollar")
     # engine.plot_instrument_details("Fintech Token")
     # engine.plot_instrument_details("Fun Drink")
     # engine.plot_instrument_details("Red Pens")
